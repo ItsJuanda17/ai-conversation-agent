@@ -53,6 +53,48 @@ def get_thread(thread_id: str, limit: int = 100) -> dict[str, Any]:
     }
 
 
+def calculate_propagation_metrics(
+    root: pd.Series | None,
+    descendants: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Calculate impact metrics for a response tree."""
+    authors = {
+        item["author"]
+        for item in descendants
+        if item.get("author")
+    }
+    timestamps = pd.to_datetime(
+        [item["created_at"] for item in descendants if item.get("created_at")],
+        errors="coerce",
+    ).dropna()
+
+    first_reply_at = timestamps.min() if len(timestamps) else None
+    last_reply_at = timestamps.max() if len(timestamps) else None
+    propagation_minutes = None
+    average_replies_per_hour = None
+
+    if first_reply_at is not None and last_reply_at is not None:
+        propagation_minutes = (last_reply_at - first_reply_at).total_seconds() / 60
+        hours = max(propagation_minutes / 60, 1)
+        average_replies_per_hour = len(descendants) / hours
+
+    root_created_at = root.get("createdAtDatetime") if root is not None else None
+    first_reply_delay_minutes = None
+
+    if root_created_at is not None and first_reply_at is not None and pd.notna(root_created_at):
+        first_reply_delay_minutes = (first_reply_at - root_created_at).total_seconds() / 60
+
+    return {
+        "reach": len(descendants),
+        "unique_authors": len(authors),
+        "first_reply_at": first_reply_at.isoformat() if first_reply_at is not None else None,
+        "last_reply_at": last_reply_at.isoformat() if last_reply_at is not None else None,
+        "propagation_minutes": propagation_minutes,
+        "first_reply_delay_minutes": first_reply_delay_minutes,
+        "average_replies_per_hour": average_replies_per_hour,
+    }
+
+
 def get_response_tree(root_id: str, max_depth: int = 10) -> dict[str, Any]:
     """Build a response tree starting from a message id."""
     df = load_normalized_dataset()
@@ -87,6 +129,8 @@ def get_response_tree(root_id: str, max_depth: int = 10) -> dict[str, Any]:
             )
             queue.append((child_id, depth + 1))
 
+    metrics = calculate_propagation_metrics(root, descendants)
+
     return {
         "root_id": root_id,
         "root_found": root is not None,
@@ -94,5 +138,6 @@ def get_response_tree(root_id: str, max_depth: int = 10) -> dict[str, Any]:
         "direct_replies": len(children_by_parent.get(root_id, [])),
         "total_descendants": len(descendants),
         "max_depth_observed": max([item["depth"] for item in descendants], default=0),
+        "metrics": metrics,
         "descendants": descendants,
     }

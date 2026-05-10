@@ -25,6 +25,7 @@ def main() -> None:
     print(f"Direct replies: {tree['direct_replies']}")
     print(f"Total descendants: {tree['total_descendants']}")
     print(f"Max depth: {tree['max_depth_observed']}")
+    print(f"Metrics: {tree['metrics']}")
 
 
 if __name__ == "__main__":
