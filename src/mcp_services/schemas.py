@@ -16,3 +16,8 @@ class ThreadSummaryRequest(BaseModel):
 class PropagationRequest(BaseModel):
     root_id: str = Field(..., description="Message id used as propagation root.")
     max_depth: int = Field(default=10, ge=1, le=50)
+
+
+class SearchRequest(BaseModel):
+    query: str = Field(..., description="Semantic text or question to search in comments.")
+    limit: int = Field(default=20, ge=1, le=100)

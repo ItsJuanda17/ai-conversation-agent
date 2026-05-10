@@ -36,3 +36,13 @@ def call_propagation_service(root_id: str, max_depth: int = 10) -> dict[str, Any
     )
     response.raise_for_status()
     return response.json()
+
+
+def call_search_service(query: str, limit: int = 20) -> dict[str, Any]:
+    response = requests.post(
+        f"{BASE_URL}/analisis/busqueda_semantica",
+        json={"query": query, "limit": limit},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()

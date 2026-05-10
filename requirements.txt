@@ -13,3 +13,8 @@ langchain-openai
 langsmith
 
 chromadb
+
+# Testing
+pytest
+pytest-mock
+httpx

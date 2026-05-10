@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from src.agent.mcp_client import (
     call_emotions_service,
     call_propagation_service,
+    call_search_service,
     call_summary_service,
 )
 
@@ -27,6 +28,11 @@ class PropagationInput(BaseModel):
     max_depth: int = Field(default=10, ge=1, le=50)
 
 
+class SearchInput(BaseModel):
+    query: str = Field(..., description="Semantic question, topic, or text to search in comments.")
+    limit: int = Field(default=20, ge=1, le=100)
+
+
 def consultar_emociones(query: str, limit: int = 10) -> dict[str, Any]:
     """Query comments and return an emotion distribution."""
     return call_emotions_service(query=query, limit=limit)
@@ -40,6 +46,11 @@ def consultar_resumen_hilo(thread_id: str, limit: int = 50) -> dict[str, Any]:
 def consultar_propagacion(root_id: str, max_depth: int = 10) -> dict[str, Any]:
     """Query the response tree and return propagation metrics."""
     return call_propagation_service(root_id=root_id, max_depth=max_depth)
+
+
+def buscar_comentarios(query: str, limit: int = 20) -> dict[str, Any]:
+    """Search comments semantically using RAG vector embeddings."""
+    return call_search_service(query=query, limit=limit)
 
 
 TOOLS = [
@@ -69,5 +80,14 @@ TOOLS = [
             "response tree, reach, depth, direct replies, impact, or provides a root_id."
         ),
         args_schema=PropagationInput,
+    ),
+    StructuredTool.from_function(
+        func=buscar_comentarios,
+        name="buscar_comentarios",
+        description=(
+            "Use this tool when the user wants to search for specific topics, ask general questions "
+            "about the comments dataset, or do a semantic search on what people are talking about."
+        ),
+        args_schema=SearchInput,
     ),
 ]

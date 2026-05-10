@@ -1,16 +1,20 @@
-from __future__ import annotations
-
+import os
 from collections import Counter
+from typing import Literal
 
 from fastapi import FastAPI
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
 
 from src.data.queries import find_comments, get_response_tree, get_thread
+from src.data.rag import semantic_search
 from src.mcp_services.schemas import (
     CommentsRequest,
     PropagationRequest,
+    SearchRequest,
     ThreadSummaryRequest,
 )
-
 
 app = FastAPI(
     title="Conversation Analysis MCP Services",
@@ -18,52 +22,73 @@ app = FastAPI(
     version="0.1.0",
 )
 
+class CommentEmotion(BaseModel):
+    emotion: Literal["joy", "anger", "fear", "sadness", "neutral"] = Field(
+        ..., description="The primary emotion of the comment."
+    )
 
-def infer_emotion(text: str, sentiment: str) -> str:
-    """Infer a simple emotion label using sentiment and keywords.
+def get_llm():
+    model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    return ChatOpenAI(model=model_name, temperature=0)
 
-    This is a baseline. Later we can replace it with an LLM classifier while
-    preserving the same endpoint contract.
-    """
-    normalized = text.lower()
-    if any(word in normalized for word in ["jaj", "excelente", "bueno", "gracias"]):
-        return "joy"
-    if any(word in normalized for word in ["rabia", "asco", "odio", "corrupto", "hdp"]):
-        return "anger"
-    if any(word in normalized for word in ["miedo", "preocupa", "grave", "terrible"]):
-        return "fear"
-    if any(word in normalized for word in ["triste", "dolor", "pobre"]):
-        return "sadness"
-    if sentiment == "NEGATIVE":
-        return "anger"
-    if sentiment == "POSITIVE":
-        return "joy"
-    return "neutral"
+def infer_emotions_batch(comments: list[dict]) -> list[str]:
+    """Infer emotions for a batch of comments using an LLM."""
+    if not comments:
+        return []
+        
+    llm = get_llm()
+    structured_llm = llm.with_structured_output(CommentEmotion)
+    
+    emotions = []
+    # Can batch if the model supports it, but for simplicity we can just map or batch
+    # Langchain batch
+    texts = [c["text"] for c in comments]
+    results = structured_llm.batch(texts)
+    
+    for res in results:
+        if res and hasattr(res, "emotion"):
+            emotions.append(res.emotion)
+        else:
+            emotions.append("neutral")
+            
+    return emotions
 
 
-def build_extractive_summary(messages: list[dict], max_items: int = 5) -> list[str]:
-    """Select short representative messages as a first summary baseline."""
-    candidates = [
-        message["text"].strip()
-        for message in messages
-        if message.get("text") and len(message["text"].strip()) > 40
-    ]
-    return candidates[:max_items]
-
+def generate_llm_summary(messages: list[dict], max_items: int = 5) -> list[str]:
+    """Generate a summary of the thread using an LLM."""
+    if not messages:
+        return []
+        
+    llm = get_llm()
+    
+    text_content = "\n".join([f"- {msg['text']}" for msg in messages if msg.get('text')])
+    
+    prompt = PromptTemplate.from_template(
+        "Eres un analista experto. Resume el siguiente hilo de conversación en máximo {max_items} puntos clave o mensajes representativos.\n"
+        "Hilo:\n{text_content}\n\n"
+        "Devuelve cada punto en una nueva línea comenzando con un guión (-)."
+    )
+    
+    chain = prompt | llm
+    result = chain.invoke({"max_items": max_items, "text_content": text_content[:10000]}) # limit text to avoid huge context
+    
+    lines = str(result.content).split("\n")
+    summary = [line.strip("- *").strip() for line in lines if line.strip()]
+    return summary[:max_items]
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
-
 
 @app.post("/analisis/emociones")
 def analyze_emotions(request: CommentsRequest) -> dict:
     comments = find_comments(request.query, limit=request.limit)
     enriched_comments = []
     emotion_counts: Counter[str] = Counter()
+    
+    emotions = infer_emotions_batch(comments)
 
-    for comment in comments:
-        emotion = infer_emotion(comment["text"], comment["sentiment"])
+    for comment, emotion in zip(comments, emotions):
         emotion_counts[emotion] += 1
         enriched_comments.append({**comment, "emotion": emotion})
 
@@ -73,7 +98,6 @@ def analyze_emotions(request: CommentsRequest) -> dict:
         "emotion_distribution": dict(emotion_counts),
         "comments": enriched_comments,
     }
-
 
 @app.post("/analisis/resumen")
 def summarize_thread(request: ThreadSummaryRequest) -> dict:
@@ -85,11 +109,19 @@ def summarize_thread(request: ThreadSummaryRequest) -> dict:
         "thread_id": request.thread_id,
         "total_messages": thread["total_messages"],
         "sentiment_distribution": dict(sentiments),
-        "representative_messages": build_extractive_summary(messages),
+        "representative_messages": generate_llm_summary(messages),
         "messages": messages,
     }
-
 
 @app.post("/analisis/propagacion")
 def analyze_propagation(request: PropagationRequest) -> dict:
     return get_response_tree(request.root_id, max_depth=request.max_depth)
+
+@app.post("/analisis/busqueda_semantica")
+def search_semantic(request: SearchRequest) -> dict:
+    results = semantic_search(request.query, limit=request.limit)
+    return {
+        "query": request.query,
+        "total_results": len(results),
+        "results": results,
+    }

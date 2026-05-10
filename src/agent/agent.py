@@ -21,6 +21,7 @@ Reglas:
 - Si el usuario pide resumen de un hilo y proporciona thread_id, usa consultar_resumen_hilo.
 - Si el usuario pregunta por propagacion, alcance, impacto, arbol de respuestas o root_id,
   usa consultar_propagacion.
+- Si el usuario quiere buscar información general, temas específicos, o preguntas de búsqueda semántica en los comentarios, usa buscar_comentarios.
 - Si falta un id necesario, pide el dato exacto antes de llamar la herramienta.
 - Responde en espanol claro y resume los resultados tecnicos en lenguaje entendible.
 """
