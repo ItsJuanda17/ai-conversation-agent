@@ -33,7 +33,10 @@ def find_comments(query: str, limit: int = 20) -> list[dict[str, Any]]:
 
     query = query.strip()
     if query:
-        mask = comments["text"].str.contains(query, case=False, na=False, regex=False)
+        terms = [term for term in query.split() if len(term) > 2]
+        mask = pd.Series(True, index=comments.index)
+        for term in terms:
+            mask &= comments["text"].str.contains(term, case=False, na=False, regex=False)
         comments = comments[mask]
 
     comments = comments.sort_values("createdAtDatetime", ascending=True).head(limit)
