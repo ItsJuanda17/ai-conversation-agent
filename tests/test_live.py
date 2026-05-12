@@ -1,5 +1,14 @@
 """Live integration test: hits the real running server with real OpenAI calls."""
+import os
 import requests, json, sys, time
+
+if os.getenv("RUN_LIVE_TESTS", "false").lower() != "true":
+    import pytest
+
+    pytest.skip(
+        "Live tests are disabled by default. Set RUN_LIVE_TESTS=true to run them.",
+        allow_module_level=True,
+    )
 
 BASE = "http://127.0.0.1:8000"
 PASS = 0

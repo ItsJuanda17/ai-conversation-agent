@@ -14,7 +14,7 @@ def test_health():
 def test_frontend_index():
     response = client.get("/")
     assert response.status_code == 200
-    assert "Agente de conversaciones" in response.text
+    assert "Agente IA" in response.text
 
 
 @patch("src.mcp_services.app.find_comments")
