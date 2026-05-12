@@ -3,100 +3,172 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Agente de conversaciones</title>
+    <title>Agente de Conversaciones — Análisis IA</title>
+    <meta name="description" content="Plataforma de análisis conversacional con IA: emociones, resúmenes de hilos, propagación y búsqueda semántica RAG." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="app-shell">
-      <aside class="sidebar">
-        <div>
-          <p class="eyebrow">Reto ICESI</p>
-          <h1>Agente de conversaciones</h1>
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
+          <div class="brand">
+            <div class="brand-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="eyebrow">Reto ICESI</p>
+              <h1>Agente IA</h1>
+            </div>
+          </div>
+
+          <nav class="tabs" aria-label="Análisis">
+            <button class="tab active" data-tab="emociones" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              Emociones
+            </button>
+            <button class="tab" data-tab="resumen" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+              Resumen
+            </button>
+            <button class="tab" data-tab="propagacion" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+              Propagación
+            </button>
+            <button class="tab" data-tab="rag" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Búsqueda RAG
+            </button>
+          </nav>
         </div>
 
-        <nav class="tabs" aria-label="Analisis">
-          <button class="tab active" data-tab="emociones" type="button">Emociones</button>
-          <button class="tab" data-tab="resumen" type="button">Resumen</button>
-          <button class="tab" data-tab="propagacion" type="button">Propagacion</button>
-          <button class="tab" data-tab="rag" type="button">RAG</button>
-        </nav>
-
-        <div class="status-block">
-          <span id="apiStatus" class="status-pill">Conectando</span>
-          <a href="/docs" target="_blank" rel="noreferrer">Swagger</a>
+        <div class="sidebar-bottom">
+          <div class="status-block">
+            <span id="apiStatus" class="status-pill">
+              <span class="status-dot"></span>
+              Conectando...
+            </span>
+            <a href="/docs" target="_blank" rel="noreferrer" class="swagger-link">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Swagger
+            </a>
+          </div>
+          <p class="sidebar-credit">MCP · LangChain · RAG</p>
         </div>
       </aside>
 
+      <!-- Mobile header -->
+      <header class="mobile-header">
+        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Abrir menú">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <h1 class="mobile-title">Agente IA</h1>
+      </header>
+
+      <!-- Workspace -->
       <section class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">MCP + LangChain + RAG</p>
+            <p class="eyebrow" id="viewSubtitle">Análisis de sentimiento</p>
             <h2 id="viewTitle">Emociones</h2>
           </div>
-          <button id="sampleButton" class="secondary-button" type="button">Cargar ejemplo</button>
+          <button id="sampleButton" class="ghost-button" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Cargar ejemplo
+          </button>
         </header>
 
+        <!-- Emociones -->
         <section class="view active" id="view-emociones">
           <form class="query-form" data-endpoint="/analisis/emociones" data-renderer="emotions">
-            <label>
-              Tema
-              <input name="query" value="reforma laboral" required />
-            </label>
-            <label>
-              Limite
-              <input name="limit" type="number" min="1" max="100" value="8" />
-            </label>
-            <button type="submit">Analizar</button>
+            <div class="form-group">
+              <label for="emo-query">Tema a analizar</label>
+              <input id="emo-query" name="query" value="reforma laboral" placeholder="ej: reforma laboral, petro, elecciones..." required />
+            </div>
+            <div class="form-group">
+              <label for="emo-limit">Límite</label>
+              <input id="emo-limit" name="limit" type="number" min="1" max="100" value="8" />
+            </div>
+            <button type="submit" class="submit-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Analizar
+            </button>
           </form>
         </section>
 
+        <!-- Resumen -->
         <section class="view" id="view-resumen">
           <form class="query-form" data-endpoint="/analisis/resumen" data-renderer="summary">
-            <label>
-              Thread ID
-              <input name="thread_id" value="tikapi_7520430294948793606" required />
-            </label>
-            <label>
-              Limite
-              <input name="limit" type="number" min="1" max="500" value="25" />
-            </label>
-            <button type="submit">Resumir</button>
+            <div class="form-group">
+              <label for="sum-thread">Thread ID</label>
+              <input id="sum-thread" name="thread_id" value="tikapi_7520430294948793606" placeholder="ID del hilo de conversación" required />
+            </div>
+            <div class="form-group">
+              <label for="sum-limit">Límite</label>
+              <input id="sum-limit" name="limit" type="number" min="1" max="500" value="25" />
+            </div>
+            <button type="submit" class="submit-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Resumir
+            </button>
           </form>
         </section>
 
+        <!-- Propagacion -->
         <section class="view" id="view-propagacion">
           <form class="query-form" data-endpoint="/analisis/propagacion" data-renderer="propagation">
-            <label>
-              Root ID
-              <input name="root_id" value="106064209472141_767905085584441" required />
-            </label>
-            <label>
-              Profundidad
-              <input name="max_depth" type="number" min="1" max="50" value="10" />
-            </label>
-            <button type="submit">Consultar</button>
+            <div class="form-group">
+              <label for="prop-root">Root ID</label>
+              <input id="prop-root" name="root_id" value="106064209472141_767905085584441" placeholder="ID del mensaje raíz" required />
+            </div>
+            <div class="form-group">
+              <label for="prop-depth">Profundidad</label>
+              <input id="prop-depth" name="max_depth" type="number" min="1" max="50" value="10" />
+            </div>
+            <button type="submit" class="submit-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Consultar
+            </button>
           </form>
         </section>
 
+        <!-- RAG -->
         <section class="view" id="view-rag">
           <form class="query-form" data-endpoint="/analisis/busqueda_semantica" data-renderer="search">
-            <label>
-              Consulta
-              <input name="query" value="preocupaciones sobre reforma laboral" required />
-            </label>
-            <label>
-              Limite
-              <input name="limit" type="number" min="1" max="100" value="6" />
-            </label>
-            <button type="submit">Buscar</button>
+            <div class="form-group">
+              <label for="rag-query">Consulta semántica</label>
+              <input id="rag-query" name="query" value="preocupaciones sobre reforma laboral" placeholder="Escribe tu pregunta en lenguaje natural..." required />
+            </div>
+            <div class="form-group">
+              <label for="rag-limit">Límite</label>
+              <input id="rag-limit" name="limit" type="number" min="1" max="100" value="6" />
+            </div>
+            <button type="submit" class="submit-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Buscar
+            </button>
           </form>
         </section>
 
+        <!-- Results -->
         <section id="resultPanel" class="results" aria-live="polite">
-          <div class="empty-state">Selecciona un analisis para ver resultados.</div>
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <p>Selecciona un análisis y haz clic en <strong>ejecutar</strong> para ver resultados.</p>
+          </div>
         </section>
       </section>
     </main>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <script src="/static/app.js"></script>
   </body>
