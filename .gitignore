@@ -8,7 +8,7 @@ __pycache__/
 .env
 .codex_tmp/
 
-data/raw/
+data/chroma_db/
 data/processed/
 data/vectorstore/
 data/chroma_db/

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import requests
 
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("MCP_BASE_URL", "http://127.0.0.1:8000")
 
 
 def call_emotions_service(query: str, limit: int = 10) -> dict[str, Any]:

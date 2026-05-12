@@ -1,4 +1,4 @@
-﻿# ai-conversation-agent
+# ai-conversation-agent
 
 Agente conversacional para analizar conversaciones digitales usando servicios MCP,
 LangChain, LangSmith y RAG.
@@ -85,3 +85,20 @@ USE_LLM_ANALYSIS=true
 
 La busqueda RAG usa embeddings de OpenAI cuando necesita construir o consultar
 el indice vectorial.
+
+### 5. Despliegue en Render
+
+El proyecto incluye un `Dockerfile` y `render.yaml` listos para desplegar:
+
+1. Subir el repo a GitHub.
+2. Ir a [render.com](https://render.com) y crear un **New Web Service** conectando el repo.
+3. Render detectará el `Dockerfile` automáticamente.
+4. Configurar la variable de entorno `OPENAI_API_KEY` en el dashboard de Render.
+5. La API queda disponible en `https://<tu-app>.onrender.com/docs`.
+
+Para que el agente CLI apunte al servicio desplegado:
+
+```powershell
+$env:MCP_BASE_URL = "https://<tu-app>.onrender.com"
+python -m src.agent.chat_cli
+```
