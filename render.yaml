@@ -3,10 +3,25 @@ services:
     name: ai-conversation-agent
     runtime: docker
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
+      - key: APP_MODE
+        value: demo
+      - key: USE_LLM_ANALYSIS
+        value: "true"
+      - key: RAG_EMBEDDING_BACKEND
+        value: local
+      - key: RAG_AUTO_BUILD
+        value: "false"
+      - key: LANGSMITH_TRACING
+        value: "true"
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGSMITH_PROJECT
+        value: agente-conversaciones-reto
       - key: DATASET_PATH
         value: data/raw/reto_data.parquet
