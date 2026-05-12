@@ -10,6 +10,13 @@ def test_health():
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
+
+def test_frontend_index():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Agente de conversaciones" in response.text
+
+
 @patch("src.mcp_services.app.find_comments")
 @patch("src.mcp_services.app.infer_emotions_batch")
 def test_analyze_emotions(mock_infer, mock_find):

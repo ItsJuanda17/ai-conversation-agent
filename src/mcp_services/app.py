@@ -1,11 +1,15 @@
 import os
+from pathlib import Path
 from collections import Counter
 from typing import Literal
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from openai import APIError
 
 from src.data.queries import find_comments, get_response_tree, get_thread
 from src.data.rag import semantic_search
@@ -16,11 +20,18 @@ from src.mcp_services.schemas import (
     ThreadSummaryRequest,
 )
 
+BASE_DIR = Path(__file__).resolve().parents[1]
+WEB_DIR = BASE_DIR / "web"
+STATIC_DIR = WEB_DIR / "static"
+
 app = FastAPI(
     title="Conversation Analysis MCP Services",
     description="Analytical microservices for comments, threads, and propagation.",
     version="0.1.0",
 )
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 class CommentEmotion(BaseModel):
     emotion: Literal["joy", "anger", "fear", "sadness", "neutral"] = Field(
@@ -31,11 +42,36 @@ def get_llm():
     model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     return ChatOpenAI(model=model_name, temperature=0)
 
+
+def use_llm_analysis() -> bool:
+    return os.getenv("USE_LLM_ANALYSIS", "false").lower() == "true"
+
+
+def infer_emotion_heuristic(text: str, sentiment: str) -> str:
+    normalized = text.lower()
+    if any(word in normalized for word in ["jaj", "excelente", "bueno", "gracias"]):
+        return "joy"
+    if any(word in normalized for word in ["rabia", "asco", "odio", "corrupto", "hdp"]):
+        return "anger"
+    if any(word in normalized for word in ["miedo", "preocupa", "grave", "terrible"]):
+        return "fear"
+    if any(word in normalized for word in ["triste", "dolor", "pobre"]):
+        return "sadness"
+    if sentiment == "NEGATIVE":
+        return "anger"
+    if sentiment == "POSITIVE":
+        return "joy"
+    return "neutral"
+
+
 def infer_emotions_batch(comments: list[dict]) -> list[str]:
     """Infer emotions for a batch of comments using an LLM."""
     if not comments:
         return []
-        
+
+    if not use_llm_analysis():
+        return [infer_emotion_heuristic(c["text"], c.get("sentiment", "")) for c in comments]
+
     llm = get_llm()
     structured_llm = llm.with_structured_output(CommentEmotion)
     
@@ -43,7 +79,10 @@ def infer_emotions_batch(comments: list[dict]) -> list[str]:
     # Can batch if the model supports it, but for simplicity we can just map or batch
     # Langchain batch
     texts = [c["text"] for c in comments]
-    results = structured_llm.batch(texts)
+    try:
+        results = structured_llm.batch(texts)
+    except APIError:
+        return [infer_emotion_heuristic(c["text"], c.get("sentiment", "")) for c in comments]
     
     for res in results:
         if res and hasattr(res, "emotion"):
@@ -54,10 +93,22 @@ def infer_emotions_batch(comments: list[dict]) -> list[str]:
     return emotions
 
 
+def build_extractive_summary(messages: list[dict], max_items: int = 5) -> list[str]:
+    candidates = [
+        message["text"].strip()
+        for message in messages
+        if message.get("text") and len(message["text"].strip()) > 40
+    ]
+    return candidates[:max_items]
+
+
 def generate_llm_summary(messages: list[dict], max_items: int = 5) -> list[str]:
     """Generate a summary of the thread using an LLM."""
     if not messages:
         return []
+
+    if not use_llm_analysis():
+        return build_extractive_summary(messages, max_items=max_items)
         
     llm = get_llm()
     
@@ -70,11 +121,20 @@ def generate_llm_summary(messages: list[dict], max_items: int = 5) -> list[str]:
     )
     
     chain = prompt | llm
-    result = chain.invoke({"max_items": max_items, "text_content": text_content[:10000]}) # limit text to avoid huge context
+    try:
+        result = chain.invoke({"max_items": max_items, "text_content": text_content[:10000]})
+    except APIError:
+        return build_extractive_summary(messages, max_items=max_items)
     
     lines = str(result.content).split("\n")
     summary = [line.strip("- *").strip() for line in lines if line.strip()]
     return summary[:max_items]
+
+
+@app.get("/")
+def frontend() -> FileResponse:
+    return FileResponse(WEB_DIR / "index.html")
+
 
 @app.get("/health")
 def health() -> dict[str, str]:

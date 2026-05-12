@@ -11,5 +11,6 @@ __pycache__/
 data/raw/
 data/processed/
 data/vectorstore/
+data/chroma_db/
 
 *.log

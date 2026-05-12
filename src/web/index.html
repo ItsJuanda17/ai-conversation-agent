@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agente de conversaciones</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">Reto ICESI</p>
+          <h1>Agente de conversaciones</h1>
+        </div>
+
+        <nav class="tabs" aria-label="Analisis">
+          <button class="tab active" data-tab="emociones" type="button">Emociones</button>
+          <button class="tab" data-tab="resumen" type="button">Resumen</button>
+          <button class="tab" data-tab="propagacion" type="button">Propagacion</button>
+          <button class="tab" data-tab="rag" type="button">RAG</button>
+        </nav>
+
+        <div class="status-block">
+          <span id="apiStatus" class="status-pill">Conectando</span>
+          <a href="/docs" target="_blank" rel="noreferrer">Swagger</a>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">MCP + LangChain + RAG</p>
+            <h2 id="viewTitle">Emociones</h2>
+          </div>
+          <button id="sampleButton" class="secondary-button" type="button">Cargar ejemplo</button>
+        </header>
+
+        <section class="view active" id="view-emociones">
+          <form class="query-form" data-endpoint="/analisis/emociones" data-renderer="emotions">
+            <label>
+              Tema
+              <input name="query" value="reforma laboral" required />
+            </label>
+            <label>
+              Limite
+              <input name="limit" type="number" min="1" max="100" value="8" />
+            </label>
+            <button type="submit">Analizar</button>
+          </form>
+        </section>
+
+        <section class="view" id="view-resumen">
+          <form class="query-form" data-endpoint="/analisis/resumen" data-renderer="summary">
+            <label>
+              Thread ID
+              <input name="thread_id" value="tikapi_7520430294948793606" required />
+            </label>
+            <label>
+              Limite
+              <input name="limit" type="number" min="1" max="500" value="25" />
+            </label>
+            <button type="submit">Resumir</button>
+          </form>
+        </section>
+
+        <section class="view" id="view-propagacion">
+          <form class="query-form" data-endpoint="/analisis/propagacion" data-renderer="propagation">
+            <label>
+              Root ID
+              <input name="root_id" value="106064209472141_767905085584441" required />
+            </label>
+            <label>
+              Profundidad
+              <input name="max_depth" type="number" min="1" max="50" value="10" />
+            </label>
+            <button type="submit">Consultar</button>
+          </form>
+        </section>
+
+        <section class="view" id="view-rag">
+          <form class="query-form" data-endpoint="/analisis/busqueda_semantica" data-renderer="search">
+            <label>
+              Consulta
+              <input name="query" value="preocupaciones sobre reforma laboral" required />
+            </label>
+            <label>
+              Limite
+              <input name="limit" type="number" min="1" max="100" value="6" />
+            </label>
+            <button type="submit">Buscar</button>
+          </form>
+        </section>
+
+        <section id="resultPanel" class="results" aria-live="polite">
+          <div class="empty-state">Selecciona un analisis para ver resultados.</div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

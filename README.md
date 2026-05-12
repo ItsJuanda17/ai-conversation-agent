@@ -5,11 +5,13 @@ LangChain, LangSmith y RAG.
 
 ## Demo actual
 
-Por ahora el proyecto permite ejecutar tres servicios analiticos:
+Por ahora el proyecto permite ejecutar una interfaz web monolitica y cuatro
+servicios analiticos:
 
 - Emociones en comentarios.
 - Resumen basico de hilos.
 - Propagacion y arbol de respuestas.
+- Busqueda semantica RAG.
 
 ### 1. Activar entorno
 
@@ -29,7 +31,13 @@ Swagger queda disponible en:
 http://127.0.0.1:8000/docs
 ```
 
-### 3. Probar sin consumir tokens
+La interfaz web queda disponible en:
+
+```text
+http://127.0.0.1:8000/
+```
+
+### 3. Probar sin consumir tokens desde terminal
 
 En otra terminal:
 
@@ -55,6 +63,7 @@ Crear un archivo `.env` basado en `.env.example` y configurar:
 ```env
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
+USE_LLM_ANALYSIS=false
 LANGSMITH_TRACING=true
 LANGSMITH_API_KEY=
 LANGSMITH_PROJECT=agente-conversaciones-reto
@@ -67,3 +76,12 @@ python -m src.agent.chat_cli
 ```
 
 Si no hay cuota disponible en OpenAI, usar el modo sin LLM mientras se desarrolla.
+
+Para activar resumen y emociones con LLM en los endpoints MCP, cambiar:
+
+```env
+USE_LLM_ANALYSIS=true
+```
+
+La busqueda RAG usa embeddings de OpenAI cuando necesita construir o consultar
+el indice vectorial.
