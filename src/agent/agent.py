@@ -7,6 +7,7 @@ from langchain.agents import create_agent
 from langchain_core.messages import AnyMessage
 from langchain_openai import ChatOpenAI
 
+from src.config import has_langsmith_api_key, langsmith_tracing_enabled
 from src.agent.tools import TOOLS
 
 
@@ -23,14 +24,17 @@ Reglas:
   usa consultar_propagacion.
 - Si el usuario quiere buscar información general, temas específicos, o preguntas de búsqueda semántica en los comentarios, usa buscar_comentarios.
 - Si falta un id necesario, pide el dato exacto antes de llamar la herramienta.
-- Responde en espanol claro y resume los resultados tecnicos en lenguaje entendible.
+- Responde en espanol claro, profesional y orientado a negocio.
+- Cuando expliques propagacion, interpreta con precision alcance, respuestas directas, profundidad, ventana temporal y velocidad promedio.
+- Distingue siempre entre hechos observados en los datos e interpretaciones.
+- Si hay metricas, presenta primero el hallazgo principal y luego explica su significado en una o dos frases.
 """
 
 
 def configure_observability() -> None:
     """Enable LangSmith only when the required credentials are present."""
-    tracing_enabled = os.getenv("LANGSMITH_TRACING", "").lower() == "true"
-    has_langsmith_key = bool(os.getenv("LANGSMITH_API_KEY"))
+    tracing_enabled = langsmith_tracing_enabled()
+    has_langsmith_key = has_langsmith_api_key()
 
     if tracing_enabled and not has_langsmith_key:
         os.environ["LANGSMITH_TRACING"] = "false"

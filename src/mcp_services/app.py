@@ -4,6 +4,7 @@ from collections import Counter
 from typing import Literal
 
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -11,8 +12,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from openai import APIError
 
+from src.config import use_llm_analysis
 from src.data.queries import find_comments, get_response_tree, get_thread
-from src.data.rag import semantic_search
+from src.rag.index import semantic_search
 from src.mcp_services.schemas import (
     CommentsRequest,
     PropagationRequest,
@@ -41,10 +43,6 @@ class CommentEmotion(BaseModel):
 def get_llm():
     model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     return ChatOpenAI(model=model_name, temperature=0)
-
-
-def use_llm_analysis() -> bool:
-    return os.getenv("USE_LLM_ANALYSIS", "false").lower() == "true"
 
 
 def infer_emotion_heuristic(text: str, sentiment: str) -> str:
@@ -179,7 +177,11 @@ def analyze_propagation(request: PropagationRequest) -> dict:
 
 @app.post("/analisis/busqueda_semantica")
 def search_semantic(request: SearchRequest) -> dict:
-    results = semantic_search(request.query, limit=request.limit)
+    try:
+        results = semantic_search(request.query, limit=request.limit)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
     return {
         "query": request.query,
         "total_results": len(results),
